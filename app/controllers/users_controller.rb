@@ -1,5 +1,7 @@
 class UsersController < ApplicationController
-  before_action :set_user, only: [:show, :edit, :update, :destroy]
+ # before_action :set_user, only: [:show, :edit, :update, :destroy]
+  before_action :signed_in_user, only: [:index, :edit, :update]
+  before_action :correct_user, only: [:edit, :update]
 
   # GET /users
   # GET /users.json
@@ -8,7 +10,6 @@ class UsersController < ApplicationController
   end
 
   # GET /users/1
-  # GET /users/1.json
   def show
     @user = User.find(params[:id])
   end
@@ -20,6 +21,8 @@ class UsersController < ApplicationController
 
   # GET /users/1/edit
   def edit
+    #already done in correct_user in before_action
+    #@user = User.find(params[:id])
   end
 
   # POST /users
@@ -50,7 +53,15 @@ class UsersController < ApplicationController
   # PATCH/PUT /users/1
   # PATCH/PUT /users/1.json
   def update
-    respond_to do |format|
+    #already done in correct_user in before_action
+   # @user = User.find(params[:id])
+    if @user.update_attributes(user_params)
+      flash[:success] = "Profile Updated"
+      redirect_to @user
+    else
+      render 'edit'
+    end
+=begin    respond_to do |format|
       if @user.update(user_params)
         format.html { redirect_to @user, notice: 'User was successfully updated.' }
         format.json { head :no_content }
@@ -59,6 +70,7 @@ class UsersController < ApplicationController
         format.json { render json: @user.errors, status: :unprocessable_entity }
       end
     end
+=end
   end
 
   # DELETE /users/1
@@ -73,13 +85,27 @@ class UsersController < ApplicationController
 
   private
     # Use callbacks to share common setup or constraints between actions.
-    def set_user
-      @user = User.find(params[:id])
-    end
+ #   def set_user
+ #     @user = User.find(params[:id])
+ #   end
 
     # Never trust parameters from the scary internet, only allow the white list through.
    def user_params
      params.require(:user).permit(:name, :email, :password,
                                   :password_confirmation)
    end
+
+  # Before filters
+
+  def signed_in_user
+    unless signed_in?
+      store_location
+      redirect_to signin_url, notice: "Please sign in"
+    end
+  end
+
+  def correct_user
+    @user = User.find(params[:id])
+    redirect_to(root_url) unless current_user?(@user)
+  end
 end
